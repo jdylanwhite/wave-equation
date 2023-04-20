@@ -1,0 +1,94 @@
+#+title: Wave Equation
+#+author: J. Dylan White
+#+STARTUP: latexpreview
+
+* TODO Derive equations used
+* TODO Derive equations for 2D propagating wave
+* TODO Code simulation for 2D propagating wave
+* TODO Code up plotting for 2D propagating wave
+* TODO Review boundary conditions
+* TODO Review CFL stability criteria
+
+* Introduction
+
+It's been a while since I've written any Fortran code or done any numerical simulations. I thought I'd get started with something relatively easy, like the wave equation.
+
+* The Wave Equation
+
+The wave equation is a well known partial differential equation. The one-dimensional wave equation can be written as
+
+\begin{displaymath}
+\frac{\partial^2 u}{\partial t^2} = c^2 \frac{\partial^2 u}{\partial x^2},
+\end{displaymath}
+
+
+Here, $t$ is time, $x$ is the axis along which the wave propagates, $u$ is the wave amplitude as a function of time and space, and $c$ is the speed of the wave.
+
+* Discretization of the Domain
+
+For a one-dimensional domain, we simply discretize the $x$ axis via
+
+\begin{displaymath}
+x_i = x_0 + i \Delta x \in (x_0, x_1, ... , x_i , ..., x_{n_x - 1}, x_{n_x})
+\end{displaymath}
+
+and time via
+
+\begin{displaymath}
+t^n = t^0 + n \Delta t \in (t^0, t^1, ... , t^n , ..., t^{n_t - 1}, t^{n_t}).
+\end{displaymath}
+
+Here, $x_i$ is an arbitrary position along the $x$ dimension spanning from the beginning of the domain, $x_0$, to the end of the domain, $x_{n_x}$. Similarly, $t^n$ is an arbitrary time spanning from the beginning of the time domain, $t^0$, to the end of the time domain, $t^{n_t}$. The fixed grid-spacing between consecutive points is $\Delta x = x_i - x_{i-1}$ and likewise, the timestep between consecutive times is $\Delta t = t^n - t^{n-1}$.
+
+* Finite Difference Method
+
+We have to apply a finite difference method to come up with a discretized solution to our wave equation. We'll apply a centered difference in both time and space:
+
+\begin{displaymath}
+\frac{u^{n+1}_i - 2 u^n_i +u^{n-1}_i}{(\Delta t)^2} = c^2 \frac{u^n_{i+1} - 2 u^n_i +u^n_{i-1}}{(\Delta x)^2}.
+\end{displaymath}
+
+Solving for $u^{n+1}_i$ allows us to iteratively solve for $u$:
+
+\begin{displaymath}
+u^{n+1}_i = 2 u^n_i - u^{n-1}_i + \Big( \frac{c \Delta t}{\Delta x} \Big)^2 (u^n_{i+1} - 2 u^n_i +u^n_{i-1}).
+\end{displaymath}
+
+* Initial and Boundary Conditions
+
+For the discretized integration for second derivatives in both time and space, we need to know what happens at the edges of the domain. That means that in order to solve the equation above, we need values for the two edges of the spatial domain, $u^n_0$ and $u^n_{n_x}$ and two initial values in the time domain, $u^0_i$ and $u^{-1}_i$.
+
+We'll initialize the model with a Gaussian pulse at the center of the domain, so we can write
+
+\begin{displaymath}
+u^0_i = \exp \Big( - \frac{(x_i - x_c)^2}{2 \sigma^2} \Big).
+\end{displaymath}
+
+Where $x_c$ is the center of the pulse and $\sigma$ is a measure of the spread of the pulse. We can use conditions for the boundary to impose that the boundary is rigid:
+
+\begin{displaymath}
+u_0^n = u_{n_x}^n = 0.
+\end{displaymath}
+
+We still need to decide what happens for $u^{-1}_i$. For this case, we can impose that
+
+\begin{displaymath}
+\frac{\partial u}{\partial t} (x,t_0) \approx \frac{u_i^0 - u_i^{-1}}{\Delta t} = 0
+\end{displaymath}
+
+and therefore
+
+\begin{displaymath}
+u_i^{-1} = u_i^0.
+\end{displaymath}
+
+This means we can write the solution for $u^1_i$ a bit differently:
+
+
+\begin{displaymath}
+u^{1}_i = u^0_i + \Big( \frac{c \Delta t}{\Delta x} \Big)^2 (u^0_{i+1} - 2 u^0_i +u^0_{i-1}).
+\end{displaymath}
+
+And with that, we are prepared to build the iterative solution!
+
+
